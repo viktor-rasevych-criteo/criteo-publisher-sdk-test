@@ -17,6 +17,7 @@ package com.criteo.publisher
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import com.criteo.publisher.BannerLogMessage.onBannerViewFailedToReloadDuringExpandedState
 import com.criteo.publisher.BannerLogMessage.onBannerViewLoading
 import com.criteo.publisher.ErrorLogMessage.onUncaughtErrorAtPublicApi
@@ -93,6 +94,7 @@ class CriteoBannerAdWebView(
     loadIfAdNotExpanded {
       logger.log(onBannerViewLoading(parentContainer))
       integrationRegistry.declare(Integration.STANDALONE)
+      Log.d("MEGATAG", "isNull -> ${parentContainer == null}")
       eventController.fetchAdAsync(bannerAdUnit, contextData)
     }
   }

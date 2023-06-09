@@ -22,6 +22,7 @@ import static com.criteo.publisher.CriteoListenerCode.VALID;
 import static com.criteo.publisher.util.AdUnitType.CRITEO_BANNER;
 
 import android.content.ComponentName;
+import android.util.Log;
 import android.webkit.WebViewClient;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -94,7 +95,13 @@ public class CriteoBannerEventController {
   }
 
   void notifyFor(@NonNull CriteoListenerCode code) {
+    Log.d("MEGATAG", "isNullWeakReference->" + (view == null));
+    Log.d("MEGATAG", "isNullView->" + (view.get() == null));
+    Log.d("MEGATAG", "isNullInEventController->" + (view.get().getParentContainer() == null));
+    Log.d("MEGATAG", "ThreadInEventController->" + Thread.currentThread().getName());
     executor.executeAsync(new CriteoBannerListenerCallTask(adListener, new WeakReference(view.get().getParentContainer()), code));
+    Log.d("MEGATAG", "After isNullInEventController->" + (view.get().getParentContainer() == null));
+    Log.d("MEGATAG", "After ThreadInEventController->" + Thread.currentThread().getName());
   }
 
   void displayAd(@NonNull String displayUrl) {

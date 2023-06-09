@@ -18,6 +18,7 @@ package com.criteo.testapp
 
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
@@ -32,6 +33,7 @@ import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.nativead.NativeAd
@@ -81,7 +83,9 @@ class AdMobMediationActivity : AppCompatActivity() {
             .setTagForChildDirectedTreatment(CoppaActivity.currentCoppaFlag.toGoogleCoppaFlag())
             .build()
     )
-    MobileAds.initialize(this)
+    MobileAds.initialize(this, OnInitializationCompleteListener {
+      Log.d("MEGATAG", it.toString())
+    })
   }
 
   private fun loadBanner() {
