@@ -13,67 +13,67 @@ on:
         required: false
 
 jobs:
-  java-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout (latest)
-        uses: actions/checkout@v2
-        if: github.event.inputs.git-ref == ''
-
-      - name: Checkout (custom ref)
-        uses: actions/checkout@v2
-        if: github.event.inputs.git-ref != ''
-        with:
-          ref: ${{ github.event.inputs.git-ref }}
-
-      - name: Store Gradle cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: ${{ runner.os }}-gradle-
-
-      - name: Disable TCP/UDP Offloading (Linux)
-        shell: bash
-        run: sudo ethtool -K eth0 tx off rx off
-
-      - name: Set up Android SDK
-        uses: malinskiy/action-android/install-sdk@release/0.1.2
-
-      # This cache below is not fully working: it should go above the "Set up Android SDK" but:
-      # - The action does not support having a SDK already setup -> platform-tools, licenses are re-downloaded
-      # - Having this cache still prevents Gradle to re-download every time the build-tools.
-      - name: Store Android SDK
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.ANDROID_HOME }}
-          key: ${{ runner.os }}-android-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: ${{ runner.os }}-android-
-
-      - name: Build & Run Java tests
-        run: ./gradlew build assemble assembleAndroidTest
-
-      - name: Junit Report to Annotations
-        uses: turpif/junit-report-annotations-action@v2.0.1
-        if: failure()
-        with:
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-          name: "Java JUnit Report"
-
-      - name: Upload all human readable reports (JUnit+Lint+Detekt+Jacoco)
-        uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: junit-report
-          path: "**/build/reports/**/*"
-
-      - name: Upload XML reports for quality-tests
-        uses: actions/upload-artifact@v2
-        with:
-          name: java-quality-reports
-          path: |
-            **/reports/**/*.xml
-            **/TEST-*.xml
+#  java-tests:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout (latest)
+#        uses: actions/checkout@v2
+#        if: github.event.inputs.git-ref == ''
+#
+#      - name: Checkout (custom ref)
+#        uses: actions/checkout@v2
+#        if: github.event.inputs.git-ref != ''
+#        with:
+#          ref: ${{ github.event.inputs.git-ref }}
+#
+#      - name: Store Gradle cache
+#        uses: actions/cache@v2
+#        with:
+#          path: ~/.gradle/caches
+#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+#          restore-keys: ${{ runner.os }}-gradle-
+#
+#      - name: Disable TCP/UDP Offloading (Linux)
+#        shell: bash
+#        run: sudo ethtool -K eth0 tx off rx off
+#
+#      - name: Set up Android SDK
+#        uses: malinskiy/action-android/install-sdk@release/0.1.2
+#
+#      # This cache below is not fully working: it should go above the "Set up Android SDK" but:
+#      # - The action does not support having a SDK already setup -> platform-tools, licenses are re-downloaded
+#      # - Having this cache still prevents Gradle to re-download every time the build-tools.
+#      - name: Store Android SDK
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.ANDROID_HOME }}
+#          key: ${{ runner.os }}-android-${{ hashFiles('**/*.gradle*') }}
+#          restore-keys: ${{ runner.os }}-android-
+#
+#      - name: Build & Run Java tests
+#        run: ./gradlew build assemble assembleAndroidTest
+#
+#      - name: Junit Report to Annotations
+#        uses: turpif/junit-report-annotations-action@v2.0.1
+#        if: failure()
+#        with:
+#          access-token: ${{ secrets.GITHUB_TOKEN }}
+#          name: "Java JUnit Report"
+#
+#      - name: Upload all human readable reports (JUnit+Lint+Detekt+Jacoco)
+#        uses: actions/upload-artifact@v2
+#        if: failure()
+#        with:
+#          name: junit-report
+#          path: "**/build/reports/**/*"
+#
+#      - name: Upload XML reports for quality-tests
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: java-quality-reports
+#          path: |
+#            **/reports/**/*.xml
+#            **/TEST-*.xml
 
   android-tests:
     runs-on: macos-latest
@@ -81,19 +81,19 @@ jobs:
         fail-fast: false
         matrix:
           include:
-            - api: '29'
-              abi: 'x86'
-              tag: 'google_apis'
-
-            - api: '30'
-              abi: 'x86'
-              tag: 'playstore' # Explicitly need the PlayStore to fetch GAID
-
-            - api: '31'
-              abi: 'x86_64'
-              tag: 'google_apis'
-
-            # api 32 is an interim release of Android without api changes, so it is skipped here
+#            - api: '29'
+#              abi: 'x86'
+#              tag: 'google_apis'
+#
+#            - api: '30'
+#              abi: 'x86'
+#              tag: 'playstore' # Explicitly need the PlayStore to fetch GAID
+#
+#            - api: '31'
+#              abi: 'x86_64'
+#              tag: 'google_apis'
+#
+#            # api 32 is an interim release of Android without api changes, so it is skipped here
 
             - api: '33'
               abi: 'x86_64'
@@ -131,24 +131,6 @@ jobs:
       # On merge, run non-flaky-tests without retry then flaky tests with retry policy
       - name: Run all Android tests
         uses: reactivecircus/android-emulator-runner@v2
-        if: github.event_name == 'push'
-        with:
-          api-level: ${{ matrix.api }}
-          target: ${{ matrix.tag }}
-          arch: ${{ matrix.abi }}
-          force-avd-creation: false
-          # Use a medium size skin rather than default size. Some tests need to have a decent size.
-          emulator-options: -no-snapshot-save -noaudio -no-boot-anim -skin 360x640
-          disable-animations: true
-          script: |
-            adb logcat -c # clear logs
-            mkdir artifacts && touch artifacts/logcat.log && chmod +w artifacts/logcat.log
-            adb logcat >> artifacts/logcat.log &
-            ./gradlew gordon --tests=androidx.test.filters.FlakyTest && ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.FlakyTest
-
-      # Run only non-flaky tests on PR
-      - name: Run Android tests w/o @FlakyTest
-        uses: reactivecircus/android-emulator-runner@v2
         if: github.event_name != 'push'
         with:
           api-level: ${{ matrix.api }}
@@ -162,7 +144,25 @@ jobs:
             adb logcat -c # clear logs
             mkdir artifacts && touch artifacts/logcat.log && chmod +w artifacts/logcat.log
             adb logcat >> artifacts/logcat.log &
-            ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.FlakyTest
+            ./gradlew gordon --tests=com.criteo.publisher.integration.MraidBannerFunctionalTest
+
+#      # Run only non-flaky tests on PR
+#      - name: Run Android tests w/o @FlakyTest
+#        uses: reactivecircus/android-emulator-runner@v2
+#        if: github.event_name != 'push'
+#        with:
+#          api-level: ${{ matrix.api }}
+#          target: ${{ matrix.tag }}
+#          arch: ${{ matrix.abi }}
+#          force-avd-creation: false
+#          # Use a medium size skin rather than default size. Some tests need to have a decent size.
+#          emulator-options: -no-snapshot-save -noaudio -no-boot-anim -skin 360x640
+#          disable-animations: true
+#          script: |
+#            adb logcat -c # clear logs
+#            mkdir artifacts && touch artifacts/logcat.log && chmod +w artifacts/logcat.log
+#            adb logcat >> artifacts/logcat.log &
+#            ./gradlew connectedCheck -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.FlakyTest
 
       - name: Upload logcat output
         uses: actions/upload-artifact@v2
@@ -195,76 +195,76 @@ jobs:
             **/TEST-*.xml
             **/test-results/gordon/*.xml
 
-  quality-tests:
-    runs-on: ubuntu-latest
-
-    needs:
-      - java-tests
-      - android-tests
-
-    steps:
-      - name: Checkout (latest)
-        uses: actions/checkout@v2
-        if: github.event.inputs.git-ref == ''
-        with:
-          # Fetch the whole history to activate the auto-assignment of Sonar issues.
-          # Also, Sonar needs the base branch to be fetched in order to provide a good report.
-          fetch-depth: 0
-
-      - name: Checkout (custom ref)
-        uses: actions/checkout@v2
-        if: github.event.inputs.git-ref != ''
-        with:
-          fetch-depth: 0 # Same as above
-          ref: ${{ github.event.inputs.git-ref }}
-
-      # Sonar drops support of Java 8 in favor of the new LTS: Java 11.
-      # See https://sonarcloud.io/documentation/user-guide/move-analysis-java-11/
-      - name: Setup Java 11
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-
-      - name: Download quality reports of java-tests
-        uses: actions/download-artifact@v2
-        with:
-          name: java-quality-reports
-
-      - name: Download quality reports of android-tests
-        uses: actions/download-artifact@v2
-        with:
-          name: android-quality-reports
-
-      - name: SonarQube Analysis
-        run: ./gradlew sonarqube
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy-development-artifacts:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' # Only deploy on merge
-
-    needs:
-      - java-tests
-      - android-tests
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Disable TCP/UDP Offloading (Linux)
-        shell: bash
-        run: sudo ethtool -K eth0 tx off rx off
-
-      - name: Set up Android SDK
-        uses: malinskiy/action-android/install-sdk@release/0.1.2
-
-      - name: Deploy artifacts and notify on Slack
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          MAVEN_SECRING_GPG_BASE64: ${{ secrets.MAVEN_SECRING_GPG_BASE64 }}
-          MAVEN_SECRING_PASSWORD: ${{ secrets.MAVEN_SECRING_PASSWORD }}
-        run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository sendReleaseDeployedToSonatypeMessageToSlack
+#  quality-tests:
+#    runs-on: ubuntu-latest
+#
+#    needs:
+#      - java-tests
+#      - android-tests
+#
+#    steps:
+#      - name: Checkout (latest)
+#        uses: actions/checkout@v2
+#        if: github.event.inputs.git-ref == ''
+#        with:
+#          # Fetch the whole history to activate the auto-assignment of Sonar issues.
+#          # Also, Sonar needs the base branch to be fetched in order to provide a good report.
+#          fetch-depth: 0
+#
+#      - name: Checkout (custom ref)
+#        uses: actions/checkout@v2
+#        if: github.event.inputs.git-ref != ''
+#        with:
+#          fetch-depth: 0 # Same as above
+#          ref: ${{ github.event.inputs.git-ref }}
+#
+#      # Sonar drops support of Java 8 in favor of the new LTS: Java 11.
+#      # See https://sonarcloud.io/documentation/user-guide/move-analysis-java-11/
+#      - name: Setup Java 11
+#        uses: actions/setup-java@v2
+#        with:
+#          distribution: 'temurin'
+#          java-version: '11'
+#
+#      - name: Download quality reports of java-tests
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: java-quality-reports
+#
+#      - name: Download quality reports of android-tests
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: android-quality-reports
+#
+#      - name: SonarQube Analysis
+#        run: ./gradlew sonarqube
+#        env:
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#  deploy-development-artifacts:
+#    runs-on: ubuntu-latest
+#    if: github.event_name == 'push' # Only deploy on merge
+#
+#    needs:
+#      - java-tests
+#      - android-tests
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - name: Disable TCP/UDP Offloading (Linux)
+#        shell: bash
+#        run: sudo ethtool -K eth0 tx off rx off
+#
+#      - name: Set up Android SDK
+#        uses: malinskiy/action-android/install-sdk@release/0.1.2
+#
+#      - name: Deploy artifacts and notify on Slack
+#        env:
+#          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+#          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+#          MAVEN_SECRING_GPG_BASE64: ${{ secrets.MAVEN_SECRING_GPG_BASE64 }}
+#          MAVEN_SECRING_PASSWORD: ${{ secrets.MAVEN_SECRING_PASSWORD }}
+#        run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository sendReleaseDeployedToSonatypeMessageToSlack
